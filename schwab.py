@@ -27,11 +27,14 @@ class Schwab(account):
         time.sleep(15)
         browser.switch_to.frame(browser.find_element_by_id('loginIframe'))
         time.sleep(15)
-        UsernameElement = browser.find_element_by_xpath("/html/body/div/div/form/div[2]/div[2]/input")
+        UsernameElement = browser.find_element_by_xpath('//*[@id="LoginId"]')
+
+ #       UsernameElement = browser.find_element_by_xpath("/html/body/div/div/form/div[2]/div[2]/input")
         UsernameElement.send_keys(username)
-        PasswordElement = browser.find_element_by_xpath("/html/body/div/div/form/div[3]/div[2]/input")
+        time.sleep(15)
+        PasswordElement = browser.find_element_by_xpath('//*[@id="Password"]')
         PasswordElement.send_keys(password)
-        SubmitButton = UsernameElement = browser.find_element_by_xpath("/html/body/div/div/form/div[5]/button")
+        SubmitButton = UsernameElement = browser.find_element_by_xpath('//*[@id="LoginSubmitBtn"]')
         SubmitButton.click()
         time.sleep(15)
         actpage = browser.current_url
