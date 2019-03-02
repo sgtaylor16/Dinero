@@ -121,7 +121,7 @@ def Volatility(history):
         changes = np.append(changes,((history[i-1] - history[i]) / history[i]))
     return pd.Series(changes) * 100
         
-def balance(account,bond_fctn,figsize = (10,8)):
+def balance(account,bond_fctn,figsize = (10,8),conceal = False):
     '''Plots an accounts holdings relative to a target account with 
     bond fctn held in bonds
     '''
@@ -145,17 +145,17 @@ def balance(account,bond_fctn,figsize = (10,8)):
             col = cm(1. * j/len(places))
             value = bycat.loc[cat][place]
  #           print(value)
-            plt.bar(i,value,width, bottom = bottoms[i], color = col,align = 'edge')
+            ax.bar(i,value,width, bottom = bottoms[i], color = col,align = 'edge')
             bottoms[i] = bottoms[i] + value
 #    Create the lengend
     legendlist =[]
     for j, place in enumerate(places):
         legendlist.append(mpatches.Patch(color = cm(1. * j/len(places)), label = place))
 
-    plt.legend(handles = legendlist)
+    ax.legend(handles = legendlist)
     plt.xticks(ind,cats)
             
-    #now calculaate appropriate targets
+    #now calculate appropriate targets
     aimpoints = target(bond_fctn,total)
     for cat in cats:
         if cat in aimpoints.index:
@@ -167,13 +167,28 @@ def balance(account,bond_fctn,figsize = (10,8)):
     #aimpoints.columns = cats
     width = -.35  
     for i,cat in enumerate(aimpoints.index):
-            value = aimpoints[cat] * total
-            print(i,cat,value)
-            plt.bar(i,value,width, color = 'gray',align = 'edge')
-    temp = 'Total = ' + str(total)
-    plt.text(.05,.9,temp,transform=ax.transAxes,size = 15)
+            value = aimpoints[cat]# * total
+            ax.bar(i,value,width, color = 'gray',align = 'edge')
+    temp = 'Total = ${0:.2f}'.format(total)
+    if conceal == False:  #plot data that gives information on nominal values
+        ax.text(.05,.9,temp,transform=ax.transAxes,size = 15)
+    else:  # Hide data that gives information on nominal values
+        ax.set_yticklabels([])
+    ax.grid()
+
+    #TODO CHange the return to a table of difference
+    mine = account.portfolio['Value'].groupby([account.portfolio['Cat']]).sum()
+    targets = target(0.28,account.Value())
+    compare = pd.concat([mine,targets],axis = 1,sort = False)
+    compare.columns = ['Actuals','Targets']
+    compare = compare.fillna(0)
+    compare['Difference'] = compare.apply(lambda row: row[0] - row[1],axis = 1)
+    compare.loc['Totals',:] = compare.sum()
+
+
+
     
-    return bycat
+    return compare
 
 def cleannum(text):
     result = text.replace('\n','')  #get rid of extra lines
@@ -183,15 +198,24 @@ def cleannum(text):
     return float(result)
     
 def target(per_bond,total_value = None):
-    LargeCap = (1-per_bond)*.62
-    IntNatl = (1-per_bond)*0.07
-    EmrgMkts = (1-per_bond)*0.09
-    SmallCap = (1-per_bond)*0.11
-    REIT = (1-per_bond)*0.11
-    target_alloc= pd.Series(data = [per_bond,LargeCap,IntNatl,EmrgMkts,SmallCap,REIT],index =['Bond','Large Cap','IntNatl','Emrg Mkts'
-                           ,'Small Cap','REIT'], name = 'Share')
-    if type(total_value) == float:
-        target_alloc = target_alloc.map(lambda x: total_value * x)
+    '''Calculates the non-bond portion of target values of sectors either normalized or as a value
+    relative to the total value provided in the function call
+    '''
+    LargeCap = (1-per_bond)*.61  #Large Cap should be 62% of Non-bond portfolio
+    IntNatl = (1-per_bond)*0.06  #International Cap should be 7% of Non-bond protfolio
+    EmrgMkts = (1-per_bond)*0.08 #Emerging markets should be 9% of non-bond portfolio
+    SmallCap = (1-per_bond)*0.11 #Smallcap should be 11% of non-bond portfolio
+    REIT = (1-per_bond)*0.10  #REIT should be 11 percent of non bond portfolio
+    cash = (1 - per_bond)*.04
+    target_alloc= pd.Series(data = [per_bond,LargeCap,IntNatl,EmrgMkts,SmallCap,REIT,cash],
+                            index =['Bond','Large Cap','IntNatl','Emrg Mkts','Small Cap','REIT','Cash'], name = 'Share')
+    
+    try:
+        total_value = float(total_value)
+        target_alloc = target_alloc.apply(lambda x:x * total_value)
+    except (TypeError, ValueError):
+        pass
+
     return target_alloc
     
     
@@ -230,19 +254,16 @@ class account:
         ('FLBAX','Bond'),('FSIVX','IntNatl'),
         ('TIP','Bond'),('FDRXX**','Cash'),
         ('FLBIX','Bond'),('FSIIX','IntNatl'),
-        ('VBTIX','Bond'),('VINIX','Large Cap')
-        ,('VTMGX','IntNatl'),('PLFIX','Large Cap'),
-        ('ITOT','Large Cap'),('VCIT','Bond')]
+        ('VBTIX','Bond'),('VINIX','Large Cap'),
+        ('VTMGX','IntNatl'),('PLFIX','Large Cap'),
+        ('ITOT','Large Cap'),('VCIT','Bond'),
+        ('FNBGX','Bond'),('FSPSX','IntNatl')]
+
     categories = pd.DataFrame.from_records(matrix, columns = ['Ticker','Cat']) 
        
     
     def add_cats(self):
-        self.portfolio = pd.merge(self.portfolio,account.categories,how = 'left', 
-                                  left_on='Ticker', right_on='Ticker')
-                        
-#        def update_values(self,date):
-#        date = dt.today
-
+        self.portfolio = pd.merge(self.portfolio,account.categories,how = 'left', left_on='Ticker', right_on='Ticker')
         #Need to catch errors where bond is not available.t
     def Value(self):
         '''Returns the value of an account'''
@@ -304,20 +325,9 @@ class account:
 #        for sector in self.portfolio.Cat.unique():
             
     def addPrin(self,qty,value):
+        '''Function to manually set the value in the Principal Fund'''
         #Get Price
 #        price = self.new_price('PLFIX',key)
         price = value/qty
         new_row = pd.DataFrame({'Ticker':'PLFIX','Qty':qty,'Price':price,'Value':value,'Account': 'IMMI401K','Cat':'Large Cap'},index =[1])
         self.portfolio = pd.concat([self.portfolio,new_row],axis = 0)
-        
-        
-    
-
- 
-
-    
-
- 
-
-
-  
