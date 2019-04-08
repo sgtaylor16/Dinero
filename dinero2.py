@@ -176,7 +176,7 @@ def balance(account,bond_fctn,figsize = (10,8),conceal = False):
         ax.set_yticklabels([])
     ax.grid()
 
-    #TODO CHange the return to a table of difference
+    #Creates a table that shows differences between actuals and targets by category
     mine = account.portfolio['Value'].groupby([account.portfolio['Cat']]).sum()
     targets = target(0.28,account.Value())
     compare = pd.concat([mine,targets],axis = 1,sort = False)
@@ -202,10 +202,10 @@ def target(per_bond,total_value = None):
     relative to the total value provided in the function call
     '''
     LargeCap = (1-per_bond)*.61  #Large Cap should be 62% of Non-bond portfolio
-    IntNatl = (1-per_bond)*0.06  #International Cap should be 7% of Non-bond protfolio
+    IntNatl = (1-per_bond)*0.05  #International Cap should be 7% of Non-bond protfolio
     EmrgMkts = (1-per_bond)*0.08 #Emerging markets should be 9% of non-bond portfolio
     SmallCap = (1-per_bond)*0.11 #Smallcap should be 11% of non-bond portfolio
-    REIT = (1-per_bond)*0.10  #REIT should be 11 percent of non bond portfolio
+    REIT = (1-per_bond)*0.11  #REIT should be 11 percent of non bond portfolio
     cash = (1 - per_bond)*.04
     target_alloc= pd.Series(data = [per_bond,LargeCap,IntNatl,EmrgMkts,SmallCap,REIT,cash],
                             index =['Bond','Large Cap','IntNatl','Emrg Mkts','Small Cap','REIT','Cash'], name = 'Share')
@@ -331,3 +331,10 @@ class account:
         price = value/qty
         new_row = pd.DataFrame({'Ticker':'PLFIX','Qty':qty,'Price':price,'Value':value,'Account': 'IMMI401K','Cat':'Large Cap'},index =[1])
         self.portfolio = pd.concat([self.portfolio,new_row],axis = 0)
+
+
+#TODO Create a class to track market indices
+
+#Check out https://finance.yahoo.com/world-indices/
+
+
