@@ -40,7 +40,6 @@ def bubble(account,key,groupkey = 'Category',days_past = 60):
                 treturn = 0.0
                 vol = 0.0
                 for ticker in catdf[cat].index:
-#                    time.sleep(15)
                     print(ticker)
                     weight = catdf[cat][ticker]/total_value
                     if ticker == 'Principal':
@@ -135,19 +134,17 @@ def balance(account,bond_fctn,figsize = (10,8),conceal = False):
     places = bycat.index.get_level_values(1).unique()
     width = 0.35
     cm = plt.get_cmap('gist_rainbow')
- #   fig,ax = plt.subplot()
 
     fig,ax = plt.subplots(figsize = figsize)
-#Create a stacked plot for actual allocation
+    #Create a stacked plot for actual allocation
     for i,cat in enumerate(cats):
         bottoms = len(cats)* [0]
         for j,place in enumerate(places):
             col = cm(1. * j/len(places))
             value = bycat.loc[cat][place]
- #           print(value)
             ax.bar(i,value,width, bottom = bottoms[i], color = col,align = 'edge')
             bottoms[i] = bottoms[i] + value
-#    Create the lengend
+    #Create the lengend
     legendlist =[]
     for j, place in enumerate(places):
         legendlist.append(mpatches.Patch(color = cm(1. * j/len(places)), label = place))
@@ -178,7 +175,7 @@ def balance(account,bond_fctn,figsize = (10,8),conceal = False):
 
     #Creates a table that shows differences between actuals and targets by category
     mine = account.portfolio['Value'].groupby([account.portfolio['Cat']]).sum()
-    targets = target(0.28,account.Value())
+    targets = target(bond_fctn,account.Value())
     compare = pd.concat([mine,targets],axis = 1,sort = False)
     compare.columns = ['Actuals','Targets']
     compare = compare.fillna(0)
@@ -257,14 +254,17 @@ class account:
         ('VBTIX','Bond'),('VINIX','Large Cap'),
         ('VTMGX','IntNatl'),('PLFIX','Large Cap'),
         ('ITOT','Large Cap'),('VCIT','Bond'),
-        ('FNBGX','Bond'),('FSPSX','IntNatl')]
+        ('FNBGX','Bond'),('FSPSX','IntNatl'),
+        ('SPTL','Bond'),('VBILX','Bond')]
 
     categories = pd.DataFrame.from_records(matrix, columns = ['Ticker','Cat']) 
        
     
     def add_cats(self):
+        '''
+        Adds the categories to the portfolio
+        '''
         self.portfolio = pd.merge(self.portfolio,account.categories,how = 'left', left_on='Ticker', right_on='Ticker')
-        #Need to catch errors where bond is not available.t
     def Value(self):
         '''Returns the value of an account'''
         return self.portfolio.Value.sum()
