@@ -10,12 +10,12 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 chromium_path = r'C:/Users/sgtay/Anaconda3/Scripts/chromedriver.exe'
 profile = r'C:\Users\sgtay\AppData\Local\Google\Chrome\User Data'
-from dinero.dinero2 import account
 from dinero.dinero2 import cleannum
 import pandas as pd
 
-class Schwab(account):
+from dinero.account import account
 
+class Schwab(account):
 
     def webread(self,username,password):
 
@@ -74,7 +74,7 @@ class Schwab(account):
                     if i == 7:
                         value.append(cleannum(column.get_text()))
                 account.append(page)
-        self.portfolio = pd.DataFrame({'Account':'401K','Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})  
+        self.ledger = pd.DataFrame({'Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})  
         self.add_cats()  
         
         browser.close()
@@ -84,14 +84,14 @@ class Schwab(account):
         dropmask = data["Symbol"].apply(lambda x: ' ' not in x)
         data = data[dropmask]
 
-        self.portfolio = pd.DataFrame(columns = ['Ticker','Qty','Price','Value'])
-        self.portfolio['Ticker'] = data["Symbol"]
+        self.ledger = pd.DataFrame(columns = ['Ticker','Qty','Price','Value'])
+        self.ledger['Ticker'] = data["Symbol"]
 
-        self.portfolio["Qty"] = data["Quantity"].apply(lambda x: x.replace(",","")).astype(float)
-        self.portfolio["Price"] = data["Price"].apply(lambda x: x.replace("$","")).astype(float)
-        self.portfolio["Value"] = data["Market Value"].apply(lambda x: x.replace(",","")).apply(lambda x: x.replace("$","")).astype(float)
+        self.ledger["Qty"] = data["Quantity"].apply(lambda x: x.replace(",","")).astype(float)
+        self.ledger["Price"] = data["Price"].apply(lambda x: x.replace("$","")).astype(float)
+        self.ledger["Value"] = data["Market Value"].apply(lambda x: x.replace(",","")).apply(lambda x: x.replace("$","")).astype(float)
 
-        self.portfolio["Account"] = accountname
+        self.ledger["Account"] = accountname
 
         self.add_cats()
 

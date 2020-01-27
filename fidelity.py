@@ -14,10 +14,11 @@ from dinero.dinero2 import account
 import pandas as pd
 chromium_path = r'C:/Users/sgtay/Anaconda3/Scripts/chromedriver.exe'
 from dinero.dinero2 import cleannum
+from dinero.account import account
 
 class Fidelity(account):
     
-    def __init__(self,username,password):
+    def webread(self,username,password):
         super().__init__()
         browser = webdriver.Chrome(executable_path = chromium_path)
         browser.get('https://www.fidelity.com/')
@@ -43,7 +44,6 @@ class Fidelity(account):
         browser.close()
         toptable = accountsbs.findAll(class_ = 'p-positions-tbody')[1]
         tablerows = toptable.findAll('tr')
-        parentdf = pd.DataFrame(index = ['Qty','Price','Account'])
         
         ticker = []# 
         qty = []#
@@ -66,14 +66,14 @@ class Fidelity(account):
                     account.append(account_flag)
             except KeyError:
                 pass
-        self.portfolio = pd.DataFrame({'Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})
+        self.ledger = pd.DataFrame({'Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})
         self.add_cats() 
         
 
         
 
 class Fidelity2(account):
-    def __init__(self,username,password):
+    def webread(self,username,password):
         super().__init__()
         browser = webdriver.Chrome(executable_path = chromium_path)
         browser.get('https://www.fidelity.com/')
@@ -121,6 +121,6 @@ class Fidelity2(account):
             
                  
         account5 = pd.DataFrame({'Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})
-        self.portfolio = account5
+        self.ledger = account5
         self.add_cats() 
         
