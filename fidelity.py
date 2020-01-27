@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup as bs
 import time
 from dinero.dinero2 import account
 import pandas as pd
-chromium_path = r'C:/Users/sgtay/Anaconda2/Scripts/chromedriver.exe'
+chromium_path = r'C:/Users/sgtay/Anaconda3/Scripts/chromedriver.exe'
 from dinero.dinero2 import cleannum
 
 class Fidelity(account):
