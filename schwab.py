@@ -12,6 +12,7 @@ chromium_path = r'C:/Users/sgtay/Anaconda3/Scripts/chromedriver.exe'
 profile = r'C:\Users\sgtay\AppData\Local\Google\Chrome\User Data'
 from dinero.dinero2 import cleannum
 import pandas as pd
+from dinero.account import account
 
 from dinero.account import account
 
@@ -79,20 +80,17 @@ class Schwab(account):
         
         browser.close()
 
-    def textread(self,path,accountname,header = 0):
+    def textread(self,path,accountname,header = 1):
         data = pd.read_csv(path,header = header)
         dropmask = data["Symbol"].apply(lambda x: ' ' not in x)
         data = data[dropmask]
 
         self.ledger = pd.DataFrame(columns = ['Ticker','Qty','Price','Value'])
         self.ledger['Ticker'] = data["Symbol"]
-
         self.ledger["Qty"] = data["Quantity"].apply(lambda x: x.replace(",","")).astype(float)
         self.ledger["Price"] = data["Price"].apply(lambda x: x.replace("$","")).astype(float)
         self.ledger["Value"] = data["Market Value"].apply(lambda x: x.replace(",","")).apply(lambda x: x.replace("$","")).astype(float)
-
         self.ledger["Account"] = accountname
-
         self.add_cats()
 
 

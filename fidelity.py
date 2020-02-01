@@ -10,7 +10,6 @@ Created on Sat Mar  3 18:09:45 2018
 from selenium import webdriver
 from bs4 import BeautifulSoup as bs
 import time
-from dinero.dinero2 import account
 import pandas as pd
 chromium_path = r'C:/Users/sgtay/Anaconda3/Scripts/chromedriver.exe'
 from dinero.dinero2 import cleannum
@@ -69,9 +68,6 @@ class Fidelity(account):
         self.ledger = pd.DataFrame({'Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})
         self.add_cats() 
         
-
-        
-
 class Fidelity2(account):
     def webread(self,username,password):
         super().__init__()
