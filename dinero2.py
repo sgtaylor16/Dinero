@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.patches as mpatches
 import re
 from alpha_vantage.timeseries import TimeSeries  
+import yfinance as yf
 print('finished')
 #https://github.com/RomelTorres/alpha_vantage
 
@@ -27,7 +28,7 @@ class portfolio:
         self.ledger = pd.DataFrame(columns = ['Account','Cat','Price','Qty','Ticker','Value'])
     
     def add_account(self,account):
-        self.ledger = pd.concat([self.ledger,account.ledger])
+        self.ledger = pd.concat([self.ledger,account.ledger], sort = False)
 
     def subtract_account(self,AccountName):
         tempdf = self.ledger.copy()
@@ -41,7 +42,7 @@ class portfolio:
 
 def bubble(account,key,groupkey = 'Category',days_past = 60):
     ts = TimeSeries(key = key, output_format = 'pandas')
-    df = account.portfolio
+    df = account.ledger
     if groupkey == 'Category':
         df_columns = ['Return','Risk','Value']
         new_df = pd.DataFrame(columns = df_columns)
@@ -106,10 +107,10 @@ def group_get_risk(tickerlist,qtys,key,days_past=60):
     return Volatility(total_value)
     
 def corrplot(account):
-    #get the categories in a portfolio:
-    port = account.portfolio
+    #get the categories in a ledger:
+    port = account.ledger
     history = pd.DataFrame()
-    categories = account.portfolio.Cat.unique()
+    categories = account.ledger.Cat.unique()
     for category in categories:
         if category == 'Bond' or category == 'Cash':
             continue
@@ -141,8 +142,8 @@ def balance(account,bond_fctn,figsize = (10,8),conceal = False):
     '''Plots an accounts holdings relative to a target account with 
     bond fctn held in bonds
     '''
-    total = account.portfolio.Value.sum()
-    bycat = account.portfolio.Value.groupby([account.portfolio.Cat,account.portfolio.Account]).sum()
+    total = account.ledger.Value.sum()
+    bycat = account.ledger.Value.groupby([account.ledger.Cat,account.ledger.Account]).sum()
     (cat_index,acct_index) = bycat.index.levels
     new_index = pd.MultiIndex.from_product([cat_index,acct_index])
     bycat = bycat.reindex(new_index).fillna(0)
@@ -191,7 +192,7 @@ def balance(account,bond_fctn,figsize = (10,8),conceal = False):
     ax.grid()
 
     #Creates a table that shows differences between actuals and targets by category
-    mine = account.portfolio['Value'].groupby([account.portfolio['Cat']]).sum()
+    mine = account.ledger['Value'].groupby([account.ledger['Cat']]).sum()
     targets = target(bond_fctn,account.Value())
     compare = pd.concat([mine,targets],axis = 1,sort = False)
     compare.columns = ['Actuals','Targets']
@@ -215,11 +216,11 @@ def target(per_bond,total_value = None):
     '''Calculates the non-bond portion of target values of sectors either normalized or as a value
     relative to the total value provided in the function call
     '''
-    LargeCap = (1-per_bond)*.61  #Large Cap should be 62% of Non-bond portfolio
+    LargeCap = (1-per_bond)*.61  #Large Cap should be 62% of Non-bond ledger
     IntNatl = (1-per_bond)*0.05  #International Cap should be 7% of Non-bond protfolio
-    EmrgMkts = (1-per_bond)*0.08 #Emerging markets should be 9% of non-bond portfolio
-    SmallCap = (1-per_bond)*0.11 #Smallcap should be 11% of non-bond portfolio
-    REIT = (1-per_bond)*0.11  #REIT should be 11 percent of non bond portfolio
+    EmrgMkts = (1-per_bond)*0.08 #Emerging markets should be 9% of non-bond ledger
+    SmallCap = (1-per_bond)*0.11 #Smallcap should be 11% of non-bond ledger
+    REIT = (1-per_bond)*0.11  #REIT should be 11 percent of non bond ledger
     cash = (1 - per_bond)*.04
     target_alloc= pd.Series(data = [per_bond,LargeCap,IntNatl,EmrgMkts,SmallCap,REIT,cash],
                             index =['Bond','Large Cap','IntNatl','Emrg Mkts','Small Cap','REIT','Cash'], name = 'Share')

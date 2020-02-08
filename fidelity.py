@@ -17,7 +17,7 @@ from dinero.account import account
 
 class Fidelity(account):
     
-    def webread(self,username,password):
+    def webread1(self,username,password):
         super().__init__()
         browser = webdriver.Chrome(executable_path = chromium_path)
         browser.get('https://www.fidelity.com/')
@@ -67,9 +67,8 @@ class Fidelity(account):
                 pass
         self.ledger = pd.DataFrame({'Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})
         self.add_cats() 
-        
-class Fidelity2(account):
-    def webread(self,username,password):
+
+    def webread2(self,username,password):
         super().__init__()
         browser = webdriver.Chrome(executable_path = chromium_path)
         browser.get('https://www.fidelity.com/')
@@ -120,3 +119,12 @@ class Fidelity2(account):
         self.ledger = account5
         self.add_cats() 
         
+    def textread(self,path,accountname,header = 0):
+        data = pd.read_csv(path,header = header).dropna(subset = ['Quantity'])
+        self.ledger = pd.DataFrame(columns = ['Ticker','Qty','Price','Value'])
+        self.ledger['Ticker'] = data['Symbol']
+        self.ledger['Qty'] = data['Quantity']
+        self.ledger['Price'] = data['Last Price'].apply(lambda x: x.replace("$","")).astype(float)
+        self.ledger['Value'] = data['Current Value'].apply(lambda x: x.replace(",","")).apply(lambda x: x.replace("$","")).astype(float)
+        self.ledger['Account'] = accountname
+        self.add_cats()

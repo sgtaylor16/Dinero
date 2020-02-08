@@ -1,9 +1,38 @@
 import pandas as pd
-from alpha_vantage.timeseries import TimeSeries 
 import re
 import time
 import yfinance as yf
+from dateutil.parser import parse
 
+def _durcalc(duration):
+    if duration > 365*10:
+        return 'max'
+    elif duration > 365*5:
+        return '10y'
+    elif duration > 365*1:
+        return '5y'
+    else:
+        return '1y'
+    
+   
+
+def get_returns(ticker,startdate,enddate):
+
+    startdate = parse(startdate).strftime("%Y-%m-%d")
+    enddate = parse(enddate).strftime("%Y-%m-%d")
+
+    yfob = yf.Ticker(ticker).history(start = startdate, end = enddate)
+
+    return yfob.iloc[-1]['Close'] / yfob.iloc[0]['Close']
+
+def get_volatility(ticker,startdate,enddate):
+
+    startdate = parse(startdate).strftime("%Y-%m-%d")
+    enddate = parse(enddate).strftime("%Y-%m-%d")
+
+    yfob = yf.Ticker(ticker).history(start = startdate, end = enddate)
+
+    return yfob['Close'].pct_change().std()
 
 class account:
        
@@ -84,6 +113,17 @@ class account:
     def new_price(self,ticker):
         yfob = yf.Ticker(ticker)
         return yfob.history(period ='1d').iloc[-1]['Close']
+
+    def _CheckTicker(ticker):
+        '''
+        Checks to see if yfinance can find a price history. Returns true if it can,
+        returns False if it can't
+        '''
+        yfob = yf.Ticker(ticker)
+        if type(yfob) == str:
+            return False
+        else:
+            return True
            
     def refresh(self,key):
         '''
