@@ -22,6 +22,10 @@ print('finished')
 
 pd.options.display.float_format = '{:,.2f}'.format
 
+def yparse(strdate):
+    dt = parse(strdate)
+    return dt.strftime(("%Y-%m-%d"))
+
 class portfolio:
 
     def __init__(self):

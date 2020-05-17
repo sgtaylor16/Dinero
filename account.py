@@ -34,6 +34,21 @@ def get_volatility(ticker,startdate,enddate):
 
     return yfob['Close'].pct_change().std()
 
+def get_history(ticker,startdate,enddate,normalize = False):
+    startdate = parse(startdate).strftime("%Y-%m-%d")
+    enddate = parse(enddate).strftime("%Y-%m-%d")
+    yfob = yf.Ticker(ticker).history(start = startdate, end = enddate)
+    
+    return yfob
+
+    
+    
+
+def ReturnsVsVolatility(ticker,startdate,enddate):
+    x = get_returns(ticker,startdate,enddate)
+    y = get_volatility(ticker,startdate,enddate)
+    return (x,y)
+
 class account:
        
     '''Base class for financial accounts, children of this class have their own
@@ -72,7 +87,9 @@ class account:
         ('VTMGX','IntNatl'),('PLFIX','Large Cap'),
         ('ITOT','Large Cap'),('VCIT','Bond'),
         ('FNBGX','Bond'),('FSPSX','IntNatl'),
-        ('SPTL','Bond'),('VBILX','Bond')]
+        ('SPTL','Bond'),('VBILX','Bond'),
+        ('VTI','Large Cap'),('FXNAX','Bond'),
+        ('FXAIX','Large Cap')]
 
     categories = pd.DataFrame.from_records(matrix, columns = ['Ticker','Cat']) 
        
@@ -150,4 +167,12 @@ class account:
 #        price = self.new_price('PLFIX',key)
         price = value/qty
         new_row = pd.DataFrame({'Ticker':'PLFIX','Qty':qty,'Price':price,'Value':value,'Account': 'IMMI401K','Cat':'Large Cap'},index =[1])
+        self.ledger = pd.concat([self.ledger,new_row],axis = 0)
+        
+    def addTA(self,qty,value):
+        '''Function to manually set the value in the Principal Fund'''
+        #Get Price
+#        price = self.new_price('PLFIX',key)
+        price = value/qty
+        new_row = pd.DataFrame({'Ticker':'PLFIX','Qty':qty,'Price':price,'Value':value,'Account': 'IPX401K','Cat':'Large Cap'},index =[1])
         self.ledger = pd.concat([self.ledger,new_row],axis = 0)
