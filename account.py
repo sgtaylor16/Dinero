@@ -89,7 +89,7 @@ class account:
         ('FNBGX','Bond'),('FSPSX','IntNatl'),
         ('SPTL','Bond'),('VBILX','Bond'),
         ('VTI','Large Cap'),('FXNAX','Bond'),
-        ('FXAIX','Large Cap')]
+        ('FXAIX','Large Cap'),('VNQ','REIT')]
 
     categories = pd.DataFrame.from_records(matrix, columns = ['Ticker','Cat']) 
        
