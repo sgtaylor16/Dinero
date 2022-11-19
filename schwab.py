@@ -4,10 +4,7 @@ Created on Sat Mar  3 18:07:30 2018
 
 @author: sgtay
 """
-import time
 import pandas as pd
-from dinero.account import account
-
 from dinero.account import account
 
 class Schwab(account):
