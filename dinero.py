@@ -230,7 +230,8 @@ class account:
         ('FLBIX','Bond'),('FSIIX','IntNatl'),
         ('VBTIX','Bond'),('VINIX','Large Cap')
         ,('VTMGX','IntNatl'),('PLFIX','Large Cap'),
-        ('ITOT','Large Cap'),('VCIT','Bond')]
+        ('ITOT','Large Cap'),('VCIT','Bond'),('SNVXX','Cash'),
+        ('SPDW','IntNatl')]
     categories = pd.DataFrame.from_records(matrix, columns = ['Ticker','Cat']) 
        
     
