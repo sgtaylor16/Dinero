@@ -6,8 +6,7 @@ Created on Thu Nov 16 21:22:38 2017
 """
 
 
-from selenium import webdriver
-import selenium.webdriver.common.action_chains as A_C
+
 import time
 from bs4 import BeautifulSoup as bs
 import pandas as pd
@@ -24,7 +23,6 @@ import seaborn as sns
 import time
 pd.options.display.float_format = '{:,.2f}'.format
 
-chromium_path = r'C:/Users/sgtay/Anaconda2/Scripts/chromedriver.exe'
 
 def bubble(account,key,groupkey = 'Category',days_past = 60):
     ts = TimeSeries(key = key, output_format = 'pandas')
@@ -57,7 +55,7 @@ def bubble(account,key,groupkey = 'Category',days_past = 60):
 
                     
             tempdf = pd.DataFrame.from_records(data = [(treturn,vol,total_value)]
-                ,columns = df_columns,index = [cat])ƒ
+                ,columns = df_columns,index = [cat])
             new_df = new_df.append(tempdf)
             
     fig,ax = plt.subplots()
@@ -314,63 +312,6 @@ class add_help(account):
 #        rects1 = ax.bar(, men_means, width, color='r'
 
     
-class Schwab(account):
-    def __init__(self,username,password):
-        super().__init__()
-        browser = webdriver.Chrome(executable_path = chromium_path)
-        browser.get('https://www.schwab.com/public/schwab/nn/login/login.html&lang=en')
-        time.sleep(2)
-        browser.switch_to.frame(browser.find_element_by_id('loginIframe'))
-        time.sleep(2)
-        UsernameElement = browser.find_element_by_xpath("/html/body/div/div/form/div[2]/div[2]/input")
-        UsernameElement.send_keys(username)
-        PasswordElement = browser.find_element_by_xpath("/html/body/div/div/form/div[3]/div[2]/input")
-        PasswordElement.send_keys(password)
-        SubmitButton = UsernameElement = browser.find_element_by_xpath("/html/body/div/div/form/div[5]/button")
-        SubmitButton.click()
-        time.sleep(10)
-        actpage = browser.current_url
-        joint = browser.find_element_by_id('ctl00_wpm_ac_ac_rbk_ctl00_lnkBrokerageAccountName')
-        joint.click()
-        time.sleep(10)
-        account1 = browser.page_source
-        browser.get(actpage)
-        time.sleep(10)
-        IRA = browser.find_element_by_id('ctl00_wpm_ac_ac_rbk_ctl01_lnkBrokerageAccountName')
-        IRA.click()
-        time.sleep(5)
-        account2 = browser.page_source
-        browser.get(actpage)
-                
-        pages = {'joint':account1,'Schwab IRA':account2}
-        
-        ticker = []    
-        qty = []
-        price = []
-        value = []
-        account = []
-        
-        for page in pages:
-            pagebs = bs(pages[page])
-            funds = pagebs.findAll(class_ = 'symbol' )
-        
-            for fund in funds:
-                ticker.append(fund['data-symbol'])
-                for i,column in enumerate(fund.parent.next_siblings):
-                    #top[0] = Quantify, top[1]=Price, top[2]=Price Change, top[3]=Value
-                    if i == 1:
-                        qty.append(cleannum(column.get_text()))
-                    if i == 3:
-                        price.append(cleannum(column.get_text()))
-                    if i == 7:
-                        value.append(cleannum(column.get_text()))
-                account.append(page)
-        column_vals = [qty, price, value, account]
-        self.portfolio = pd.DataFrame({'Account':'401K','Ticker':ticker,'Qty':qty,'Price':price,'Value':value,'Account':account})  
-        self.add_cats()  
-        
-        browser.close()
-
  
 class Fidelity(account):
     

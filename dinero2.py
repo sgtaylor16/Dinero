@@ -18,7 +18,6 @@ import yfinance as yf
 print('finished')
 #https://github.com/RomelTorres/alpha_vantage
 
-#import webdriver.chrome.options
 
 pd.options.display.float_format = '{:,.2f}'.format
 
@@ -41,9 +40,6 @@ class portfolio:
     def Value(self):
         return self.ledger['Value'].sum()
     
-    
-
-
 def bubble(account,key,groupkey = 'Category',days_past = 60):
     ts = TimeSeries(key = key, output_format = 'pandas')
     df = account.ledger
@@ -84,7 +80,6 @@ def bubble(account,key,groupkey = 'Category',days_past = 60):
             
     return new_df
     
-        
 def get_history(ticker,key,days_past=60):
     '''Returns the price history and the daily percent change
     for a ticker over the last past_days.
@@ -129,7 +124,6 @@ def corrplot(account):
              history[category] = group_get_risk(tickerlist,qty,key = 'OSA1S9RNFPTFXBI9',days_past = 60)
     return history
              
-
 def Volatility(history):
     '''Takes a numpy array or dataseries of price histories and returns the
     standard deviation of the daily price changes as percentages as a pandas
