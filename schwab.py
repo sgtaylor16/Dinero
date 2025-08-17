@@ -16,9 +16,9 @@ class Schwab(account):
 
         self.ledger = pd.DataFrame(columns = ['Ticker','Qty','Price','Value'])
         self.ledger['Ticker'] = data["Symbol"]
-        self.ledger["Qty"] = data["Quantity"].apply(lambda x: x.replace(",","")).astype(float)
+        self.ledger["Qty"] = data["Qty (Quantity)"].apply(lambda x: x.replace(",","")).astype(float)
         self.ledger["Price"] = data["Price"].apply(lambda x: x.replace("$","")).astype(float)
-        self.ledger["Value"] = data["Market Value"].apply(lambda x: x.replace(",","")).apply(lambda x: x.replace("$","")).astype(float)
+        self.ledger["Value"] = data["Mkt Val (Market Value)"].apply(lambda x: x.replace(",","")).apply(lambda x: x.replace("$","")).astype(float)
         self.ledger["Account"] = accountname
         self.add_cats()
 
