@@ -30,4 +30,9 @@ for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Pers
                     session.add(inv)
                     session.commit()
 
+#Get list of all tickers in database
+with Session(engine) as session:
+    stmt = select(Investment.ticker)
+    all_tickers = session.execute(stmt).scalars().all()
+
 
