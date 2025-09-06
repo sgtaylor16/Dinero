@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, DateTime
+from sqlalchemy import Integer, String, Date
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import create_engine, ForeignKey, Float
 
@@ -25,7 +25,7 @@ class InvestmentPriceHistory(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     investment_id: Mapped[int] = mapped_column(ForeignKey("investments.id"), nullable=False)
     price: Mapped[float] = mapped_column(Float, nullable=False)
-    date: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    date: Mapped[Date] = mapped_column(Date, nullable=False)
 
 class Account(Base):
     __tablename__ = "accounts"
@@ -42,4 +42,4 @@ class Assets(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
     investment_id: Mapped[int] = mapped_column(ForeignKey("investments.id"), nullable=False)
     qty: Mapped[float] = mapped_column(Float, nullable=False)
-    date: Mapped[DateTime] = mapped_column(DateTime, nullable=False) # I will now have a history of Account assets
+    date: Mapped[Date] = mapped_column(Date, nullable=False) # I will now have a history of Account assets
