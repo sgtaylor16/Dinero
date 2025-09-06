@@ -17,9 +17,10 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     if datestr not in df['date'].values:
         raise ValueError("Date not found in database")
 
-    df = pd.read_sql_query("""SELECT name,account_id, ticker, qty FROM assets
+    df = pd.read_sql_query("""SELECT accounts.name account, ticker, qty ,investment_types.name type FROM assets
                            join accounts on assets.account_id = accounts.id
                            join investments on assets.investment_id = investments.id
+                            join investment_types on investments.type_id = investment_types.id
                       where date = ?""", conn, params=(datestr,))
     conn.close()
     return df
