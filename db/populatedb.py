@@ -1,8 +1,19 @@
-from models import InvestmentType, Investment, Account
+from models import InvestmentType, Investment, Account, Assets
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 import os
 import json
+from dateutil.parser import parse
+
+def get_ticker_id(ticker:str) -> int:
+    """Get the ID of an investment given its ticker symbol."""
+    with Session(engine) as session:
+        stmt = select(Investment).where(Investment.ticker == ticker)
+        result = session.execute(stmt).scalar_one_or_none()
+        if result:
+            return result.id
+        else:
+            return None
 
 # Create the session
 engine = create_engine("sqlite:///investments.db", echo=True)
@@ -99,10 +110,87 @@ schwab_managed = Account(name="Schwab Managed",description="Schwab Managed Bond 
 fidelity_ira = Account(name="Fidelity Roth",description="Brandy Fidelity Roth Account")
 fidelity_ira2 = Account(name="Fidelity Traditional",description="Brandy Fidelity Traditional Account")
 brandy401k = Account(name="IPX 401K",description="Brandy Empower Account")
+brandy401kold = Account(name="IMMI 401K",description="Brandy Old 401K Account")
 
 with Session(engine) as session:
     session.add_all([schwabmain, schwabira, rr401k, schwab_managed, fidelity_ira, fidelity_ira2, brandy401k])
     session.commit()
 
-
-
+#Read in the history of the accounts from JSON
+for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Personal/Finance/Stocks'):
+    if records.endswith('.json'):
+        filepath = os.path.join('/Users/scotttaylor/Library/CloudStorage/OneDrive-Personal/Finance/Stocks', records)
+        with open(filepath, 'r') as f:
+            data_dict = json.load(f)
+        #parsedate
+        accountdate = parse(records.split('.')[0])
+        with Session(engine) as session:
+            for obj in data_dict:
+                    inv = session.execute(select(Investment).where(Investment.ticker == obj['Ticker'])).scalar_one_or_none()
+                    if inv:
+                        if 'joint' in obj['Account']:
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                    account_id= 1,
+                                    qty=float(str(obj['Qty']).replace(",", "")),
+                                    date=accountdate
+                                )
+                                session.add(newinv)
+                        elif 'rollover ira' in obj['Account'].lower():
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                        account_id= 2,
+                                        qty=float(str(obj['Qty']).replace(",", "")),
+                                        date=accountdate
+                                    )
+                                session.add(newinv)
+                        elif ('ROTH IRA' in obj['Account']) or ("Roth IRA" in obj['Account']):
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                    account_id= 6,
+                                    qty=float(str(obj['Qty']).replace(",", "")),
+                                    date=accountdate
+                                )
+                                session.add(newinv)
+                        elif 'Schwab IRA' in obj['Account']:
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                    account_id= 2,
+                                    qty=float(str(obj['Qty']).replace(",", "")),
+                                    date=accountdate
+                                )
+                                session.add(newinv)
+                        elif "IPX401K" in obj['Account']:
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                    account_id= 7,
+                                    qty=float(str(obj['Qty']).replace(",", "")),
+                                    date=accountdate
+                                )
+                                session.add(newinv)
+                        elif "RR 401K" in obj['Account']:
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                    account_id= 3,
+                                    qty=float(str(obj['Qty']).replace(",", "")),
+                                    date=accountdate
+                                )
+                                session.add(newinv)
+                        elif "immi401k" in obj['Account'].lower():
+                            if get_ticker_id(obj['Ticker']) is not None:
+                                newinv = Assets(
+                                    investment_id=get_ticker_id(obj['Ticker']),
+                                    account_id= 8,
+                                    qty=float(str(obj['Qty']).replace(",", "")),
+                                    date=accountdate
+                                )
+                                session.add(newinv)
+                        else:
+                            raise ValueError(f"Unknown account type in record: {obj['Account']}")
+                        session.commit()

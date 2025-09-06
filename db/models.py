@@ -42,5 +42,4 @@ class Assets(Base):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
     investment_id: Mapped[int] = mapped_column(ForeignKey("investments.id"), nullable=False)
     qty: Mapped[float] = mapped_column(Float, nullable=False)
-    price: Mapped[float] = mapped_column(Float, nullable=False)
     date: Mapped[DateTime] = mapped_column(DateTime, nullable=False) # I will now have a history of Account assets
