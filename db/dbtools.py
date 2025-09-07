@@ -1,7 +1,9 @@
 import sqlite3
 import pandas as pd
 from dateutil.parser import parse
-
+from models import Account,Assets,Investment,InvestmentType, InvestmentPriceHistory
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
 
 def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     """
@@ -33,3 +35,71 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
 
     conn.close()
     return df3
+
+def getTickerID(ticker:str) -> int:
+    """Get the ID of an investment given its ticker symbol."""
+    engine = create_engine("sqlite:///investments.db", echo=True)
+    with Session(engine) as session:
+        stmt = select(Investment).where(Investment.ticker == ticker)
+        result = session.execute(stmt).scalar_one_or_none()
+        if result:
+            return result.id
+        else:
+            return None
+        
+def addTicker(ticker:str, type_id:int=7) -> None:
+    """Add a new ticker to the investments table."""
+    engine = create_engine("sqlite:///investments.db", echo=True)
+    with Session(engine) as session:
+        #Check if ticker already exists
+        stmt = select(Investment).where(Investment.ticker == ticker)
+        result = session.execute(stmt).scalar_one_or_none()
+        if result:
+            print(f"Ticker {ticker} already exists in database.")
+            return
+        inv = Investment(type_id=type_id, ticker=ticker)
+        session.add(inv)
+        session.commit()
+    return
+
+def readStatement(df:pd.DataFrame):
+    #Make sure df has columns Ticker, Qty, Price, Account, Date
+    if not all(col in df.columns for col in ['Ticker', 'Qty', 'Price', 'Account', 'Date']):
+        raise ValueError("DataFrame must have columns Ticker, Qty, Price, Account, Date")
+    
+    engine = create_engine("sqlite:///investments.db", echo=True)
+    with Session(engine) as session:
+        accountname = df['Account'].iloc[0]
+        #Check if account exists
+        stmt = select(Account).where(Account.name == accountname)
+        result = session.execute(stmt).scalar_one_or_none()
+        if result:
+            account_id = result.id
+        else:
+            raise ValueError(f"Account {accountname} not found in database")
+        #Get the date of the statement
+        statementdate = parse(df['Date'].iloc[0])
+
+        for index, row in df.iterrows():
+            ticker = row['Ticker']
+            qty = row['Qty']
+            price = row['Price']
+            #Find the ticker ID, if it doesn't exist, add it
+            ticker_id = getTickerID(ticker)
+            if ticker_id is None:
+                addTicker(ticker)
+                ticker_id = getTickerID(ticker)
+            #Add to assets table
+            asset = Assets(account_id=account_id, investment_id=ticker_id, date=statementdate, qty=qty)
+            session.add(asset)
+            #Add to investment price history table
+            stmt = select(InvestmentPriceHistory).where(InvestmentPriceHistory.investment_id == ticker_id).where(InvestmentPriceHistory.date == statementdate)
+            result = session.execute(stmt).scalar_one_or_none()
+            if result:
+                #Update price if it already exists
+                result.price = price
+            else:
+                pricehistory = InvestmentPriceHistory(investment_id=ticker_id, date=statementdate, price=price)
+                session.add(pricehistory)
+        session.commit()
+
