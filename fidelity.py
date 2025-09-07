@@ -10,18 +10,16 @@ Created on Sat Mar  3 18:09:45 2018
 import pandas as pd
 from dinero.account import account
 
+def numconvert(x):
+    if type(x) == float:
+        return x
+    else: #assume x is a string
+        x = x.replace(",","").replace("$","")
+        return float(x)
+
 class Fidelity(account):
-     
     def textread(self,path,accountname,header = 0):
         data = pd.read_csv(path,header = header,index_col = False).dropna(subset = ['Quantity'])
-
-        def numconvert(x):
-            if type(x) == float:
-                return x
-            else: #assume x is a string
-                x = x.replace(",","").replace("$","")
-                return float(x)
-
 
         self.ledger = pd.DataFrame(columns = ['Ticker','Qty','Price','Value'])
         self.ledger['Ticker'] = data['Symbol']
@@ -31,3 +29,19 @@ class Fidelity(account):
         self.ledger= self.ledger.dropna(subset =['Value'])
         self.ledger['Account'] = accountname
         self.add_cats()
+
+def readFidelity(path:str,accountname:str,date:str,header:int = 2) -> pd.DataFrame:
+    data = pd.read_csv(path,header = header,index_col = False).dropna(subset = ['Qty (Quantity)'])
+
+    data = data.loc[data['Qty (Quantity)'] != '--'].copy()
+
+    data['Quantity'] = data['Qty (Quantity)'].apply(numconvert)
+
+    df = pd.DataFrame(columns = ['Ticker','Qty','Price'])
+    df['Ticker'] = data['Symbol']
+    df['Qty'] = data['Quantity']
+    df['Price'] = data['Price'].apply(lambda x: x.replace("$","")).astype(float)
+    df['Account'] = accountname
+    df['Date'] = date
+
+    return df
