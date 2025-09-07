@@ -23,4 +23,15 @@ class Schwab(account):
         self.add_cats()
 
 
+def readSchwab(path,accountname,date,header = 2):
+    data = pd.read_csv(path,header = header)
+    dropmask = data["Symbol"].apply(lambda x: ' ' not in x)
+    data = data[dropmask]
+    df = pd.DataFrame(columns = ['Ticker','Qty','Price'])
+    df['Ticker'] = data["Symbol"]
+    df["Qty"] = data["Qty (Quantity)"].apply(lambda x: x.replace(",","")).astype(float)
+    df["Price"] = data["Price"].apply(lambda x: x.replace("$","")).astype(float)
+    df["Account"] = accountname
+    df["Date"] = date
 
+    return df
