@@ -4,6 +4,12 @@ from dateutil.parser import parse
 from models import Account,Assets,Investment,InvestmentType, InvestmentPriceHistory
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
+import re
+
+def checkifbondticker(ticker:str) -> bool:
+    # Check if string has both numbers AND letters
+    pattern = r'^(?=.*[A-Za-z])(?=.*\d).*$'
+    return bool(re.match(pattern, ticker))
 
 def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     """
@@ -11,7 +17,6 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     """
     date = parse(datestr)
     datestr = date.strftime("%Y-%m-%d")
-    print(datestr)
     conn = sqlite3.connect('investments.db')
 
     #check if date is in the database
@@ -29,6 +34,11 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
                       where date = ?""", conn, params=(datestr,))
     
     df3 = pd.merge(df1, df2, left_on='inv_id', right_on='investment_id', how='left')
+    for index,row in df3.iterrows():
+        if checkifbondticker(row['ticker']):
+            row['value'] = (row['qty'] / 100) * row['price']
+        else:
+            row['value'] = row['qty'] * row['price']
     df3['value'] = df3['qty'] * df3['price']
 
     df3 = df3.drop(columns=['inv_id', 'investment_id'],axis=1)
@@ -87,7 +97,10 @@ def readStatement(df:pd.DataFrame):
             #Find the ticker ID, if it doesn't exist, add it
             ticker_id = getTickerID(ticker)
             if ticker_id is None:
-                addTicker(ticker)
+                if checkifbondticker(ticker):
+                    addTicker(ticker, type_id=3)
+                else:
+                    addTicker(ticker)
                 ticker_id = getTickerID(ticker)
             #Add to assets table
             asset = Assets(account_id=account_id, investment_id=ticker_id, date=statementdate, qty=qty)
