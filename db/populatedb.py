@@ -1,9 +1,10 @@
-from models import InvestmentType, Investment, Account, Assets
+from models import InvestmentType, Investment, Account, Assets, InvestmentPriceHistory
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 import os
 import json
 from dateutil.parser import parse
+import re
 
 def get_ticker_id(ticker:str) -> int:
     """Get the ID of an investment given its ticker symbol."""
@@ -95,11 +96,26 @@ catdict = {
         "Principal":7
     }
 
+# Known Tickers
 for ticker, category in catdict.items():
     with Session(engine) as session:
         inv = session.execute(select(Investment).where(Investment.ticker == ticker)).scalar_one_or_none()
         if inv:
             inv.type_id = category
+            session.commit()
+
+# Bonds with numbers in ticker
+# Select unique tickers in the Investments table
+with Session(engine) as session:
+    stmt = select(Investment.ticker).distinct()
+    unique_tickers = session.execute(stmt).scalars().all()
+    # Use regex to find tickers with numbers
+    pattern = re.compile(r'\d')
+    bond_tickers = [ticker for ticker in unique_tickers if pattern.search(ticker)]
+    for ticker in bond_tickers:
+        inv = session.execute(select(Investment).where(Investment.ticker == ticker)).scalar_one_or_none()
+        if inv:
+            inv.type_id = 3
             session.commit()
 
 #Manually create accounts
@@ -111,9 +127,10 @@ fidelity_ira = Account(name="Fidelity Roth",description="Brandy Fidelity Roth Ac
 fidelity_ira2 = Account(name="Fidelity Traditional",description="Brandy Fidelity Traditional Account")
 brandy401k = Account(name="IPX 401K",description="Brandy Empower Account")
 brandy401kold = Account(name="IMMI 401K",description="Brandy Old 401K Account")
+schwabbond = Account(name="Schwab Bond",description="Schwab Managed Bond Account")
 
 with Session(engine) as session:
-    session.add_all([schwabmain, schwabira, rr401k, schwab_managed, fidelity_ira, fidelity_ira2, brandy401k])
+    session.add_all([schwabmain, schwabira, rr401k, schwab_managed, fidelity_ira, fidelity_ira2, brandy401k, brandy401kold, schwabbond])
     session.commit()
 
 #Read in the history of the accounts from JSON
@@ -128,6 +145,15 @@ for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Pers
             for obj in data_dict:
                     inv = session.execute(select(Investment).where(Investment.ticker == obj['Ticker'])).scalar_one_or_none()
                     if inv:
+                        #Put hte price and date in the 
+                        investment_id = get_ticker_id(obj['Ticker'])
+                        price = float(str(obj['Price']).replace(",",""))
+                        newpricehistory = InvestmentPriceHistory(
+                            investment_id=investment_id,
+                            price=price,
+                            date=accountdate
+                        )
+                        session.add(newpricehistory)
                         if 'joint' in obj['Account']:
                             if get_ticker_id(obj['Ticker']) is not None:
                                 newinv = Assets(
