@@ -34,12 +34,11 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
                       where date = ?""", conn, params=(datestr,))
     
     df3 = pd.merge(df1, df2, left_on='inv_id', right_on='investment_id', how='left')
+    df3['value'] = df3['qty'] * df3['price']
+    # Adjust bond values if ticker looks like a bond
     for index,row in df3.iterrows():
         if checkifbondticker(row['ticker']):
-            row['value'] = (row['qty'] / 100) * row['price']
-        else:
-            row['value'] = row['qty'] * row['price']
-    df3['value'] = df3['qty'] * df3['price']
+            df3.at[index,'value'] = (row['qty'] / 100) * row['price']
 
     df3 = df3.drop(columns=['inv_id', 'investment_id'],axis=1)
 
