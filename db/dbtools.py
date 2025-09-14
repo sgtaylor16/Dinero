@@ -56,19 +56,17 @@ def getTickerID(ticker:str) -> int:
         else:
             return None
         
-def addTicker(ticker:str, type_id:int=7) -> None:
+def addTicker(ticker:str, session, type_id:int=7) -> None:
     """Add a new ticker to the investments table."""
-    engine = create_engine("sqlite:///investments.db", echo=True)
-    with Session(engine) as session:
-        #Check if ticker already exists
-        stmt = select(Investment).where(Investment.ticker == ticker)
-        result = session.execute(stmt).scalar_one_or_none()
-        if result:
-            print(f"Ticker {ticker} already exists in database.")
-            return
-        inv = Investment(type_id=type_id, ticker=ticker)
-        session.add(inv)
-        session.commit()
+    #Check if ticker already exists
+    stmt = select(Investment).where(Investment.ticker == ticker)
+    result = session.execute(stmt).scalar_one_or_none()
+    if result:
+        print(f"Ticker {ticker} already exists in database.")
+        return
+    inv = Investment(type_id=type_id, ticker=ticker)
+    session.add(inv)
+    session.commit()
     return
 
 def readStatement(df:pd.DataFrame):
@@ -97,9 +95,9 @@ def readStatement(df:pd.DataFrame):
             ticker_id = getTickerID(ticker)
             if ticker_id is None:
                 if checkifbondticker(ticker):
-                    addTicker(ticker, type_id=3)
+                    addTicker(ticker, session, type_id=3)
                 else:
-                    addTicker(ticker)
+                    addTicker(ticker, session)
                 ticker_id = getTickerID(ticker)
             #Add to assets table
             asset = Assets(account_id=account_id, investment_id=ticker_id, date=statementdate, qty=qty)
