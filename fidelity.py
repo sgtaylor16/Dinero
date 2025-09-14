@@ -30,17 +30,17 @@ class Fidelity(account):
         self.ledger['Account'] = accountname
         self.add_cats()
 
-def readFidelity(path:str,accountname:str,date:str,header:int = 2) -> pd.DataFrame:
-    data = pd.read_csv(path,header = header,index_col = False).dropna(subset = ['Qty (Quantity)'])
+def readFidelity(path:str,accountname:str,date:str,header:int = 0) -> pd.DataFrame:
+    data = pd.read_csv(path,header = header,index_col = False).dropna(subset = ['Quantity'])
 
-    data = data.loc[data['Qty (Quantity)'] != '--'].copy()
+    data = data.loc[data['Quantity'] != '--'].copy()
 
-    data['Quantity'] = data['Qty (Quantity)'].apply(numconvert)
+    data['Quantity'] = data['Quantity'].apply(numconvert)
 
     df = pd.DataFrame(columns = ['Ticker','Qty','Price'])
     df['Ticker'] = data['Symbol']
     df['Qty'] = data['Quantity']
-    df['Price'] = data['Price'].apply(lambda x: x.replace("$","")).astype(float)
+    df['Price'] = data['Last Price'].apply(lambda x: x.replace("$","")).astype(float)
     df['Account'] = accountname
     df['Date'] = date
 
