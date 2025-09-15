@@ -45,18 +45,16 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     conn.close()
     return df3
 
-def getTickerID(ticker:str) -> int:
+def getTickerID(ticker:str,session:Session) -> int:
     """Get the ID of an investment given its ticker symbol."""
-    engine = create_engine("sqlite:///investments.db", echo=True)
-    with Session(engine) as session:
-        stmt = select(Investment).where(Investment.ticker == ticker)
-        result = session.execute(stmt).scalar_one_or_none()
-        if result:
-            return result.id
-        else:
-            return None
+    stmt = select(Investment).where(Investment.ticker == ticker)
+    result = session.execute(stmt).scalar_one_or_none()
+    if result:
+        return result.id
+    else:
+        return None
         
-def addTicker(ticker:str, session, type_id:int=7) -> None:
+def addTicker(ticker:str, session:Session, type_id:int=7) -> None:
     """Add a new ticker to the investments table."""
     #Check if ticker already exists
     stmt = select(Investment).where(Investment.ticker == ticker)
@@ -66,7 +64,7 @@ def addTicker(ticker:str, session, type_id:int=7) -> None:
         return
     inv = Investment(type_id=type_id, ticker=ticker)
     session.add(inv)
-    session.commit()
+    session.flush()  # Flush instead of commit to make the ticker available for queries
     return
 
 def readStatement(df:pd.DataFrame):
