@@ -5,6 +5,7 @@ from models import Account,Assets,Investment,InvestmentType, InvestmentPriceHist
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 import re
+from datetime import date
 
 def checkifbondticker(ticker:str) -> bool:
     # Check if string has both numbers AND letters
@@ -68,6 +69,7 @@ def addTicker(ticker:str, session:Session, type_id:int=7) -> None:
     return
 
 def readStatement(df:pd.DataFrame):
+    """Read statments from a dataframe and populate the database."""
     #Make sure df has columns Ticker, Qty, Price, Account, Date
     if not all(col in df.columns for col in ['Ticker', 'Qty', 'Price', 'Account', 'Date']):
         raise ValueError("DataFrame must have columns Ticker, Qty, Price, Account, Date")
@@ -90,17 +92,17 @@ def readStatement(df:pd.DataFrame):
             qty = row['Qty']
             price = row['Price']
             #Find the ticker ID, if it doesn't exist, add it
-            ticker_id = getTickerID(ticker)
+            ticker_id = getTickerID(ticker, session)
             if ticker_id is None:
                 if checkifbondticker(ticker):
                     addTicker(ticker, session, type_id=3)
                 else:
                     addTicker(ticker, session)
-                ticker_id = getTickerID(ticker)
+                ticker_id = getTickerID(ticker, session)
             #Add to assets table
             asset = Assets(account_id=account_id, investment_id=ticker_id, date=statementdate, qty=qty)
             session.add(asset)
-            #Add to investment price history table
+            #Add to investment price history table if it doesn't exist
             stmt = select(InvestmentPriceHistory).where(InvestmentPriceHistory.investment_id == ticker_id).where(InvestmentPriceHistory.date == statementdate)
             result = session.execute(stmt).scalar_one_or_none()
             if result:
@@ -111,3 +113,14 @@ def readStatement(df:pd.DataFrame):
                 session.add(pricehistory)
         session.commit()
 
+def ifTickerDateExists(ticker:str,datecheck:date,session:Session) -> bool:
+    """Check if an investment price history record exists for a given ticker and date."""
+    ticker_id = getTickerID(ticker, session)
+    if ticker_id is None:
+        return False
+    stmt = select(InvestmentPriceHistory).where(InvestmentPriceHistory.investment_id == ticker_id).where(InvestmentPriceHistory.date == datecheck)
+    result = session.execute(stmt).scalar_one_or_none()
+    if result is None:
+        return False
+    else:
+        return True
