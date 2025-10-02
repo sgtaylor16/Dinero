@@ -197,10 +197,69 @@ def balance(account,bond_fctn,figsize = (10,8),conceal = False):
     compare = compare.fillna(0)
     compare['Difference'] = compare.apply(lambda row: row[0] - row[1],axis = 1)
     compare.loc['Totals',:] = compare.sum()
+ 
+    return compare
 
+def balanceBase(df,bond_fctn,figsize = (10,8),conceal = False):
 
+    total = df.value.sum()
+    bycat = df.value.groupby([df.category,df.account]).sum()
+    (cat_index,acct_index) = bycat.index.levels
+    new_index = pd.MultiIndex.from_product([cat_index,acct_index])
+    bycat = bycat.reindex(new_index).fillna(0)
+    cats = bycat.index.get_level_values(0).unique()
+    ind = np.arange(len(cats))  #index for plotting
+    places = bycat.index.get_level_values(1).unique()
+    width = 0.35
+    cm = plt.get_cmap('gist_rainbow')
 
-    
+    fig,ax = plt.subplots(figsize = figsize)
+    #Create a stacked plot for actual allocation
+    for i,cat in enumerate(cats):
+        bottoms = len(cats)* [0]
+        for j,place in enumerate(places):
+            col = cm(1. * j/len(places))
+            value = bycat.loc[cat][place]
+            ax.bar(i,value,width, bottom = bottoms[i], color = col,align = 'edge')
+            bottoms[i] = bottoms[i] + value
+    #Create the lengend
+    legendlist =[]
+    for j, place in enumerate(places):
+        legendlist.append(mpatches.Patch(color = cm(1. * j/len(places)), label = place))
+
+    ax.legend(handles = legendlist)
+    plt.xticks(ind,cats)
+            
+    #now calculate appropriate targets
+    aimpoints = target(bond_fctn,total)
+    for cat in cats:
+        if cat in aimpoints.index:
+            pass
+        else:
+            aimpoints[cat] = 0
+    aimpoints = aimpoints[cats] #This just reorders
+            
+    #aimpoints.columns = cats
+    width = -.35  
+    for i,cat in enumerate(aimpoints.index):
+            value = aimpoints[cat]# * total
+            ax.bar(i,value,width, color = 'gray',align = 'edge')
+    temp = 'Total = ${0:.2f}'.format(total)
+    if conceal == False:  #plot data that gives information on nominal values
+        ax.text(.05,.9,temp,transform=ax.transAxes,size = 15)
+    else:  # Hide data that gives information on nominal values
+        ax.set_yticklabels([])
+    ax.grid()
+
+    #Creates a table that shows differences between actuals and targets by category
+    mine = account.ledger['Value'].groupby([account.ledger['Cat']]).sum()
+    targets = target(bond_fctn,account.Value())
+    compare = pd.concat([mine,targets],axis = 1,sort = False)
+    compare.columns = ['Actuals','Targets']
+    compare = compare.fillna(0)
+    compare['Difference'] = compare.apply(lambda row: row[0] - row[1],axis = 1)
+    compare.loc['Totals',:] = compare.sum()
+ 
     return compare
 
 def cleannum(text):

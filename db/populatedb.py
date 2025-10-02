@@ -5,6 +5,8 @@ import os
 import json
 from dateutil.parser import parse
 import re
+import sqlite3
+from dbtools import ifTickerDateExists
 
 def get_ticker_id(ticker:str) -> int:
     """Get the ID of an investment given its ticker symbol."""
@@ -140,7 +142,7 @@ for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Pers
         with open(filepath, 'r') as f:
             data_dict = json.load(f)
         #parsedate
-        accountdate = parse(records.split('.')[0])
+        accountdate = parse(records.split('.')[0]).date()
         with Session(engine) as session:
             for obj in data_dict:
                     inv = session.execute(select(Investment).where(Investment.ticker == obj['Ticker'])).scalar_one_or_none()
@@ -148,12 +150,14 @@ for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Pers
                         #Put hte price and date in the 
                         investment_id = get_ticker_id(obj['Ticker'])
                         price = float(str(obj['Price']).replace(",",""))
-                        newpricehistory = InvestmentPriceHistory(
-                            investment_id=investment_id,
-                            price=price,
-                            date=accountdate
-                        )
-                        session.add(newpricehistory)
+                        #Check if price history already exists for this date
+                        if  not ifTickerDateExists(obj['Ticker'], accountdate,session):
+                            newpricehistory = InvestmentPriceHistory(
+                                investment_id=investment_id,
+                                price=price,
+                                date=accountdate
+                            )
+                            session.add(newpricehistory)
                         if 'joint' in obj['Account']:
                             if get_ticker_id(obj['Ticker']) is not None:
                                 newinv = Assets(
@@ -220,3 +224,10 @@ for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Pers
                         else:
                             raise ValueError(f"Unknown account type in record: {obj['Account']}")
                         session.commit()
+
+# Correct errors
+con = sqlite3.connect('investments.db')
+cur = con.cursor()
+cur.execute("Update investments set type_id = 1 where ticker = '84679P504'")
+con.commit()
+con.close()

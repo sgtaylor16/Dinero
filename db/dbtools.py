@@ -85,7 +85,7 @@ def readStatement(df:pd.DataFrame):
         else:
             raise ValueError(f"Account {accountname} not found in database")
         #Get the date of the statement
-        statementdate = parse(df['Date'].iloc[0])
+        statementdate = parse(df['Date'].iloc[0]).date()
 
         for index, row in df.iterrows():
             ticker = row['Ticker']
@@ -102,12 +102,10 @@ def readStatement(df:pd.DataFrame):
             #Add to assets table
             asset = Assets(account_id=account_id, investment_id=ticker_id, date=statementdate, qty=qty)
             session.add(asset)
+
             #Add to investment price history table if it doesn't exist
-            stmt = select(InvestmentPriceHistory).where(InvestmentPriceHistory.investment_id == ticker_id).where(InvestmentPriceHistory.date == statementdate)
-            result = session.execute(stmt).scalar_one_or_none()
-            if result:
-                #Update price if it already exists
-                result.price = price
+            if ifTickerDateExists(ticker,statementdate,session):
+                continue
             else:
                 pricehistory = InvestmentPriceHistory(investment_id=ticker_id, date=statementdate, price=price)
                 session.add(pricehistory)
