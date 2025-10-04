@@ -122,3 +122,40 @@ def ifTickerDateExists(ticker:str,datecheck:date,session:Session) -> bool:
         return False
     else:
         return True
+    
+def addAccountAsset(accountname:str,ticker:str,qty:float,date:str,value:float,session:Session| None=None) -> None:
+    """Add an account and asset if they don't exist."""
+    if session is None:
+        engine = create_engine("sqlite:///investments.db", echo=True)
+        session = Session(engine)
+
+    #Check if account exists
+    stmt = select(Account).where(Account.name == accountname)
+    result = session.execute(stmt).scalar_one_or_none()
+    if result:
+        account_id = result.id
+    else:
+        raise ValueError(f"Account {accountname} not found in database")
+
+    #Check if ticker exists
+    ticker_id = getTickerID(ticker, session)
+    if ticker_id is None:
+        raise ValueError(f"Ticker {ticker} not found in database")
+
+    #Add to assets table
+    asset_date = parse(date).date()
+    asset = Assets(account_id=account_id, investment_id=ticker_id, date=asset_date, qty=qty)
+    session.add(asset)
+
+    #Add to investment price history table if it doesn't exist
+    if ifTickerDateExists(ticker,asset_date,session):
+        return
+    else:
+        pricehistory = InvestmentPriceHistory(investment_id=ticker_id, date=asset_date, price=value/qty)
+        session.add(pricehistory)
+    session.commit()
+
+    if session is None:
+        session.close()
+        
+    return
