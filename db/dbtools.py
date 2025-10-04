@@ -25,10 +25,11 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     if datestr not in df['date'].values:
         raise ValueError("Date not found in database")
 
-    df1 = pd.read_sql_query("""SELECT accounts.name account, ticker, qty ,investment_types.name type, investments.id inv_id FROM assets
+    df1 = pd.read_sql_query("""SELECT accounts.name account, ticker, qty ,investment_types.name type, investments.id inv_id,bondcorrection FROM assets
                            join accounts on assets.account_id = accounts.id
                            join investments on assets.investment_id = investments.id
                             join investment_types on investments.type_id = investment_types.id
+                            join rules on accounts.id = rules.account_id
                       where date = ?""", conn, params=(datestr,))
     
     df2 = pd.read_sql_query("""SELECT investment_id, price FROM investment_price_history
@@ -38,7 +39,7 @@ def calcPortfolioValue(datestr:str) -> pd.DataFrame:
     df3['value'] = df3['qty'] * df3['price']
     # Adjust bond values if ticker looks like a bond
     for index,row in df3.iterrows():
-        if checkifbondticker(row['ticker']):
+        if row['bondcorrection'] and checkifbondticker(row['ticker']):
             df3.at[index,'value'] = (row['qty'] / 100) * row['price']
 
     df3 = df3.drop(columns=['inv_id', 'investment_id'],axis=1)

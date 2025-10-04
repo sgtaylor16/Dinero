@@ -234,7 +234,7 @@ with Session(engine) as session:
     accounts = session.execute(select(Account)).scalars().all()
     print(accounts)
     for account in accounts:
-        if account.name == "Schwab Bond":
+        if (account.name == "Schwab Bond") or (account.name == "Schwab"):
             newrule = Rules(
                 account_id=account.id,
                 bondcorrection=True
