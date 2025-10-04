@@ -1,6 +1,6 @@
 from sqlalchemy import Integer, String, Date
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import create_engine, ForeignKey, Float
+from sqlalchemy import create_engine, ForeignKey, Float, Boolean
 
 class Base(DeclarativeBase):
     pass    
@@ -43,3 +43,10 @@ class Assets(Base):
     investment_id: Mapped[int] = mapped_column(ForeignKey("investments.id"), nullable=False)
     qty: Mapped[float] = mapped_column(Float, nullable=False)
     date: Mapped[Date] = mapped_column(Date, nullable=False) # I will now have a history of Account assets
+
+class Rules(Base):
+    __tablename__ = "rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
+    bondcorrection: Mapped[Boolean] = mapped_column(Boolean, nullable=False, default=True) 

@@ -1,4 +1,4 @@
-from models import InvestmentType, Investment, Account, Assets, InvestmentPriceHistory
+from models import InvestmentType, Investment, Account, Assets, InvestmentPriceHistory, Rules
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 import os
@@ -225,7 +225,27 @@ for records in os.listdir('/Users/scotttaylor/Library/CloudStorage/OneDrive-Pers
                                 session.add(newinv)
                         else:
                             raise ValueError(f"Unknown account type in record: {obj['Account']}")
-                        session.commit()
+            
+            # Move commit to here - outside the inner loop but inside the session
+            session.commit()
+
+#Populate the rules table
+with Session(engine) as session:
+    accounts = session.execute(select(Account)).scalars().all()
+    print(accounts)
+    for account in accounts:
+        if account.name == "Schwab Bond":
+            newrule = Rules(
+                account_id=account.id,
+                bondcorrection=True
+            )
+        else:
+            newrule = Rules(
+                account_id=account.id,
+                bondcorrection=False
+            )
+        session.add(newrule)
+    session.commit()
 
 # Correct errors
 con = sqlite3.connect('investments.db')
