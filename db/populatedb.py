@@ -53,6 +53,7 @@ catdict = {
         "SCHD": 1,
         "SCHG" : 1,
         "SCHVB": 1,
+        "SCHV": 1,
         "SCHP": 3,
         "VCIT": 3,
         "VNQ": 4,
@@ -95,7 +96,8 @@ catdict = {
         "FLBIX":3,
         "FSIIX":6,
         "IWM":1,
-        "Principal":7
+        "Principal":7,
+        "PLFIX":1
     }
 
 # Known Tickers
