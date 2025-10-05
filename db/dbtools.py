@@ -6,6 +6,8 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 import re
 from datetime import date
+from dinero.dinero import target
+import matplotlib.pyplot as plt
 
 def checkifbondticker(ticker:str) -> bool:
     # Check if string has both numbers AND letters
@@ -160,3 +162,36 @@ def addAccountAsset(accountname:str,ticker:str,qty:float,date:str,value:float,se
         session.close()
         
     return
+
+def plotPortfolioValue(datestr:str):
+        
+    df1 = calcPortfolioValue(datestr)
+    df1.drop(['bondcorrection','price','ticker','qty'],axis=1,inplace=True)
+
+    df2 = df1.groupby(['account','type']).sum()
+
+    accounts = df2.index.levels[0].tolist()
+    types = df2.index.levels[1].tolist()
+
+    type_x = {t: i+1 for i, t in enumerate(types)}
+    colors = plt.cm.tab10.colors  # Returns tuple of RGB values
+    color_map = {t: colors[i % len(colors)] for i, t in enumerate(accounts)}
+    bottoms = {type: 0 for type in types}
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for type in types:
+        for account in accounts:
+            height = df2.loc[(account, type), 'value'] if (account, type) in df2.index else 0
+            ax.bar(type_x[type], height, bottom=bottoms[type], color=color_map[account],align='edge',width = -0.25)
+            bottoms[type] += height
+    ax.set_xticks(list(type_x.values()))
+    ax.set_xticklabels(list(type_x.keys()))
+    ax.legend(accounts, title='Accounts')
+
+    #Now do targets
+    targets = target(0.28,df1['value'].sum().sum())
+    targets.rename({'IntNatl':'International','Emrg Mkts':'Emerging Markets'}, inplace=True)
+    for type in types:
+        if type in targets.index:
+            ax.bar(type_x[type], targets[type], color='grey', width=0.25, align='edge')
