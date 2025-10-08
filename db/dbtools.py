@@ -195,3 +195,10 @@ def plotPortfolioValue(datestr:str):
     for type in types:
         if type in targets.index:
             ax.bar(type_x[type], targets[type], color='grey', width=0.25, align='edge')
+
+    bytype = df1['value'].groupby(df1['type']).sum()
+
+    compare = pd.merge(targets, bytype, left_index=True, right_index=True)
+    compare['diff'] = compare['Share'] - compare['value']
+
+    return compare
