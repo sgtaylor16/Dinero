@@ -163,8 +163,8 @@ def addAccountAsset(accountname:str,ticker:str,qty:float,date:str,value:float,se
         
     return
 
-def plotPortfolioValue(datestr:str):
-        
+def plotPortfolioValue(datestr:str) -> pd.DataFrame:
+
     df1 = calcPortfolioValue(datestr)
     df1.drop(['bondcorrection','price','ticker','qty'],axis=1,inplace=True)
 
@@ -196,6 +196,10 @@ def plotPortfolioValue(datestr:str):
         if type in targets.index:
             ax.bar(type_x[type], targets[type], color='grey', width=0.25, align='edge')
 
+    #Show the account toal value in the graph
+    total_value = df1['value'].sum().sum()
+    ax.text(0.05,0.95, f'Total Value: ${total_value:,.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
     bytype = df1['value'].groupby(df1['type']).sum()
 
     compare = pd.merge(targets, bytype, left_index=True, right_index=True)
@@ -205,15 +209,20 @@ def plotPortfolioValue(datestr:str):
 
     return compare
 
-def invHistory():
+def getPortfolioDates() -> list:
+    """Get a list of all dates in the assets table."""
+    with sqlite3.connect('investments.db') as conn:
+        df = pd.read_sql_query("""SELECT DISTINCT date FROM assets""", conn)
+    return df['date'].tolist()
+
+def invHistory() -> pd.DataFrame:
 
     #Get all dates in the assets table
-    with sqlite3.connect('investments.db') as conn:
-        df_dates = pd.read_sql_query("""SELECT DISTINCT date FROM assets""", conn)
+    dates = getPortfolioDates()
+
     #For each date, calculate portfolio value
     outlist = []
-    for index, row in df_dates.iterrows():
-         date = row['date']
+    for date in dates:
          value = calcPortfolioValue(date)['value'].sum()
          outlist.append([date,value])
 
