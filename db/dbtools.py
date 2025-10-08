@@ -200,8 +200,8 @@ def plotPortfolioValue(datestr:str):
 
     compare = pd.merge(targets, bytype, left_index=True, right_index=True)
     compare['diff'] = compare['Share'] - compare['value']
-
     compare.loc["Total",:] = compare.sum(numeric_only=True)
+    compare = compare.style.format("${:,.2f}")
 
     return compare
 
