@@ -204,3 +204,17 @@ def plotPortfolioValue(datestr:str):
     compare.loc["Total",:] = compare.sum(numeric_only=True)
 
     return compare
+
+def invHistory():
+
+    #Get all dates in the assets table
+    with sqlite3.connect('investments.db') as conn:
+        df_dates = pd.read_sql_query("""SELECT DISTINCT date FROM assets""", conn)
+    #For each date, calculate portfolio value
+    outlist = []
+    for index, row in df_dates.iterrows():
+         date = row['date']
+         value = calcPortfolioValue(date)['value'].sum()
+         outlist.append([date,value])
+
+    return pd.DataFrame(outlist, columns=['date','value']).sort_values('date')
