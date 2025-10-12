@@ -209,10 +209,15 @@ def plotPortfolioValue(datestr:str) -> pd.DataFrame:
 
     return compare
 
-def getPortfolioDates() -> list:
+def getPortfolioDates() -> list[str]:
     """Get a list of all dates in the assets table."""
     with sqlite3.connect('investments.db') as conn:
         df = pd.read_sql_query("""SELECT DISTINCT date FROM assets""", conn)
+    dates_unsorted = df['date'].tolist()
+    df = pd.DataFrame(dates_unsorted, columns=['date'])
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values('date')
+    df['date'] = df['date'].dt.strftime('%Y-%m-%d')
     return df['date'].tolist()
 
 def invHistory() -> pd.DataFrame:
