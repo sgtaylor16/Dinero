@@ -97,7 +97,7 @@ class InvestmentDB:
                     session.add(pricehistory)
             session.commit()
 
-    def addAccountAsset(accountname:str,ticker:str,qty:float,date:str,value:float,session:Session| None=None) -> None:
+    def addAccountAsset(self,accountname:str,ticker:str,qty:float,date:str,value:float,session:Session| None=None) -> None:
         """Add an account and asset if they don't exist."""
         if session is None:
             engine = create_engine("sqlite:///investments.db", echo=True)
