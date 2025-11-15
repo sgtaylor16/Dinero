@@ -23,7 +23,7 @@ class Schwab(account):
         self.add_cats()
 
 
-def readSchwab(path:str,accountname:str,date:str,header:int = 2) -> pd.DataFrame:
+def readSchwab(path:str,accountname:str,date:str,header:int = 1) -> pd.DataFrame:
     data = pd.read_csv(path,header = header)
     dropmask = data["Symbol"].apply(lambda x: ' ' not in x)
     data = data[dropmask]
